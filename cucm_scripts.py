@@ -17,6 +17,7 @@ import time
 import sys
 import socket
 import csv
+import re
 
 
 # IORedirector and StdoutRedirector alter the print function to write to
@@ -67,8 +68,8 @@ class Root(tk.Tk):
 
         ttk.Button(mainframe, text="Browse...", command=lambda: self.csv_file.set(
             filedialog.askopenfilename())).grid(column=1, row=3, sticky=tk.E)
-        file_name = ttk.Entry(mainframe, width=40, textvariable=self.csv_file)
-        file_name.grid(column=2, row=3, columnspan=3)
+        file_name = ttk.Entry(mainframe, width=90, textvariable=self.csv_file)
+        file_name.grid(column=2, row=3, columnspan=4)
 
         ttk.Button(mainframe, text="Change Password",
                    command=lambda: self.password_window(0)).grid(column=1, row=4)
@@ -80,6 +81,8 @@ class Root(tk.Tk):
                    command=lambda: self.password_window(3)).grid(column=4, row=4)
         ttk.Button(mainframe, text="Delete User",
                    command=lambda: self.password_window(4)).grid(column=5, row=4)
+        ttk.Button(mainframe, text="Show Disk Usage",
+                   command=lambda: self.password_window(5)).grid(column=6, row=4)
 
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=5)
@@ -154,6 +157,8 @@ class Root(tk.Tk):
 
         for child in self.pw_root.winfo_children():
             child.grid_configure(padx=5, pady=5)
+
+        self.name.focus()
 
     # Redirect sys.stdout to text box. Get contents of csv and start threads.
     # Need to break this apart. Doing too many things.
@@ -235,6 +240,8 @@ class Root(tk.Tk):
                 self.create_user(ssh, host, status, output)
             elif window == 4:
                 self.delete_user(ssh, host, status, output)
+            elif window == 5:
+                self.show_disk(ssh, host, status, output)
         except ConnectionResetError as e:
             status = "Failed to connect - {}".format(host)
             ssh.close()
@@ -410,6 +417,44 @@ class Root(tk.Tk):
                 out.write(output)
                 print('{} - {}'.format(host, status))
                 print(output)
+            ssh.close()
+            return
+
+    # Sends command to show status and regex to display disk usage.
+    def show_disk(self, ssh, host, status, output):
+
+        disk_regex = re.compile(r'[\s]+Total[\s]+Free[\s]+Used[\s\S]+$')
+
+        try:
+            interact = SSHClientInteraction(ssh, timeout=60, display=False)
+            print("{} - connected and working".format(host))
+
+            try:
+                interact.expect('admin:')
+                interact.send('show status')
+                interact.expect("admin:")
+                output = interact.current_output_clean
+                reg_output = disk_regex.search(output)
+                status = "Complete."
+            except (paramiko.buffered_pipe.PipeTimeout, socket.timeout) as e:
+                status = "Failed!"
+                ssh.close()
+                msg.showerror("ABORT", "{} - {}".format(status, host))
+                return
+            except AttributeError as e:
+                print(output)
+        finally:
+            with open(self.output_file, 'a') as out:
+                out.write('{} - {}\n'.format(host, status))
+                if reg_output:
+                    out.write(reg_output.group())
+                else:
+                    out.write("Couldn't find information")
+                print('{} - {}'.format(host, status))
+                if reg_output:
+                    print(reg_output.group())
+                else:
+                    print("Couldn't find information")
             ssh.close()
             return
 
