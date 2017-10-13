@@ -71,18 +71,24 @@ class Root(tk.Tk):
         file_name = ttk.Entry(mainframe, width=90, textvariable=self.csv_file)
         file_name.grid(column=2, row=3, columnspan=4)
 
-        ttk.Button(mainframe, text="Change Password",
-                   command=lambda: self.password_window(0)).grid(column=1, row=4)
-        ttk.Button(mainframe, text="Monitor IMP",
-                   command=lambda: self.password_window(1)).grid(column=2, row=4)
-        ttk.Button(mainframe, text="Shutdown Servers",
-                   command=lambda: self.password_window(2)).grid(column=3, row=4)
-        ttk.Button(mainframe, text="Create User",
-                   command=lambda: self.password_window(3)).grid(column=4, row=4)
-        ttk.Button(mainframe, text="Delete User",
-                   command=lambda: self.password_window(4)).grid(column=5, row=4)
-        ttk.Button(mainframe, text="Show Disk Usage",
-                   command=lambda: self.password_window(5)).grid(column=6, row=4)
+        n = ttk.Notebook(mainframe)
+        f1 = ttk.Frame(n)
+        f2 = ttk.Frame(n)
+        n.add(f1, text="User Administration")
+        n.add(f2, text="Status Info/Shutdown")
+        n.grid(column=2, row=4, columnspan=3)
+        ttk.Button(f1, text="Change Password",
+                   command=lambda: self.password_window(0)).grid(column=1, row=1, padx=10, pady=10)
+        ttk.Button(f1, text="Create User",
+                   command=lambda: self.password_window(3)).grid(column=2, row=1, padx=10, pady=10)
+        ttk.Button(f1, text="Delete User",
+                   command=lambda: self.password_window(4)).grid(column=3, row=1, padx=10, pady=10)
+        ttk.Button(f2, text="Show Disk Usage",
+                   command=lambda: self.password_window(5)).grid(column=1, row=1, padx=10, pady=10)
+        ttk.Button(f2, text="Monitor IMP",
+                   command=lambda: self.password_window(1)).grid(column=2, row=1, padx=10, pady=10)
+        ttk.Button(f2, text="Shutdown Servers",
+                   command=lambda: self.password_window(2)).grid(column=3, row=1, padx=10, pady=10)
 
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=5)
